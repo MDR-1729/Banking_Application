@@ -61,6 +61,18 @@ class DashboardTests(TestCase):
         self.assertContains(response, "Add an account")
         self.assertNotContains(response, "Banking Mini Project")
 
+    def test_account_edit_and_delete_panels_have_close_buttons(self):
+        BankAccount.objects.create(
+            account_number="12345678901234",
+            owner_name="Jordan Davis",
+        )
+
+        response = self.client.get("/")
+
+        self.assertContains(response, 'aria-label="Close edit account options"')
+        self.assertContains(response, 'aria-label="Close delete account options"')
+        self.assertContains(response, 'class="account-close" type="button"')
+
     def test_selected_customer_balance_is_separate_from_bank_wide_balance(self):
         BankAccount.objects.create(
             account_number="12345678901234",

@@ -22,10 +22,26 @@
     .total-bank-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.6}
     .total-bank-footer{position:relative;z-index:1;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px}
     .search-form svg{width:16px;flex:0 0 auto;fill:none;stroke:#8995aa;stroke-linecap:round;stroke-width:1.7}
+    .balance-card{border-color:#e0e5ff;background:linear-gradient(145deg,#fff 0%,#f3f5ff 100%)}
+    .total-bank-card{border-color:#dfe4fa;background:linear-gradient(145deg,#f3f5ff 0%,#fff 58%,#f1f7ff 100%)}
+    .overview-grid>.bank-form-panel{border-color:#e2e5f4;background:linear-gradient(145deg,#fff 0%,#f8f8ff 100%)}
+    .bank-operations-grid .bank-form-panel:first-child{border-color:#d8eee4;background:linear-gradient(145deg,#effaf5 0%,#fff 72%)}
+    .bank-operations-grid .bank-form-panel:last-child{border-color:#f1e2d9;background:linear-gradient(145deg,#fff5ef 0%,#fff 72%)}
+    .account-list-panel,.transactions-panel{background:linear-gradient(145deg,#fff 0%,#f8faff 100%)}
+    .account-list-item{margin-top:12px;padding:16px;border:1px solid #e6eaf3;border-radius:14px;background:linear-gradient(110deg,#f7f9ff 0%,#fff 68%);box-shadow:0 4px 14px rgba(30,48,81,.035)}
+    .edit-account-form,.delete-account-form{position:relative;padding:54px 16px 16px}
+    .account-close{position:absolute;top:11px;right:11px;display:grid;width:34px;height:34px;place-items:center;border:1px solid #e0e5ef;border-radius:10px;background:#fff;color:#6b7891;cursor:pointer;transition:background .16s ease,color .16s ease,border-color .16s ease}
+    .account-close:hover{border-color:#cdd4f8;background:#f2f4ff;color:var(--accent)}
+    .account-close svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-width:2}
+    .account-delete .account-close:hover{border-color:#f0d5d8;background:#fff1f2;color:#a63e50}
+    @media(max-width:700px){.account-list-item{padding:14px}}
   </style>
   <script>
+document.addEventListener("DOMContentLoaded",()=>{
 document.querySelectorAll(".account-operation-form").forEach((form)=>{const accountNumber=form.querySelector('[name="account_number"]'),accountHolder=form.querySelector(".account-holder-name"),lookupStatus=form.querySelector(".account-lookup-status"),amount=form.querySelector('[name="amount"]'),submitButton=form.querySelector('button[type="submit"]');let lookupController;accountNumber.addEventListener("input",()=>{if(lookupController)lookupController.abort();accountHolder.value="";amount.value="";amount.disabled=true;submitButton.disabled=true;lookupStatus.classList.remove("is-error","is-success");if(!/^[0-9]{14}$/.test(accountNumber.value)){lookupStatus.textContent="Enter a valid 14-digit account number.";lookupStatus.classList.add("is-error");return}const controller=new AbortController();lookupController=controller;lookupStatus.textContent="Verifying account...";fetch(`${form.dataset.lookupUrl}?account_number=${encodeURIComponent(accountNumber.value)}`,{headers:{Accept:"application/json"},signal:controller.signal}).then(async response=>({ok:response.ok,data:await response.json()})).then(result=>{if(controller.signal.aborted)return;if(!result.ok){lookupStatus.textContent=result.data.message||"Account not found.";lookupStatus.classList.add("is-error");return}accountHolder.value=result.data.owner_name;amount.disabled=false;submitButton.disabled=false;lookupStatus.textContent="Account holder verified.";lookupStatus.classList.add("is-success")}).catch(error=>{if(error.name==="AbortError")return;lookupStatus.textContent=`Unable to verify this account: ${error.message}`;lookupStatus.classList.add("is-error")})})});
 const balanceToggle=document.querySelector("#balance-toggle"),balance=document.querySelector(".balance-amount");if(balanceToggle&&balance){const visibleBalance=balance.innerHTML;balanceToggle.addEventListener("click",()=>{const isHidden=balanceToggle.getAttribute("aria-pressed")==="true";balance.innerHTML=isHidden?visibleBalance:"••••••••";balanceToggle.setAttribute("aria-pressed",String(!isHidden));balanceToggle.setAttribute("aria-label",isHidden?"Hide balance":"Show balance")})}
+document.querySelectorAll(".account-close").forEach((button)=>{button.addEventListener("click",()=>{const details=button.closest("details");if(!details)return;details.open=false;details.querySelector("summary")?.focus()})});
+});
   </script>
 </head>
 <body>
@@ -195,6 +211,7 @@ const balanceToggle=document.querySelector("#balance-toggle"),balance=document.q
                 <details class="account-edit">
                   <summary class="button button-edit">Edit account</summary>
                   <form class="edit-account-form" method="post">
+                    <button class="account-close" type="button" aria-label="Close edit account options"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
                     {% csrf_token %}
                     <input type="hidden" name="action" value="edit">
                     <input type="hidden" name="account_number" value="{{ account.account_number }}">
@@ -208,6 +225,7 @@ const balanceToggle=document.querySelector("#balance-toggle"),balance=document.q
                 <details class="account-delete">
                   <summary class="button button-danger">Delete Account</summary>
                   <form class="delete-account-form" method="post">
+                    <button class="account-close" type="button" aria-label="Close delete account options"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
                     {% csrf_token %}
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="account_number" value="{{ account.account_number }}">
